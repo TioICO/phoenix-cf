@@ -12,3 +12,6 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <stdio.h>
+#include <cstdio>
+#include <time.h>
