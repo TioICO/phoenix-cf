@@ -3,8 +3,10 @@
 #include "stdafx.h"
 #include "memory.h"
 #include "engine.h"
+#include "log.h"
 
-Engine* hacking_engine = new Engine();
+Log* file_log = new Log("phoenix-cf.log", true);
+Engine* hacking_engine = new Engine(file_log);
 uint32_t original_flipscreen;
 
 __declspec(naked) void HookedFlipScreen()
@@ -32,6 +34,7 @@ uint32_t original_dispatch_message = reinterpret_cast<uint32_t>(&DispatchMessage
 _declspec(naked) void HookedDispatchMessageA()
 {
 	static bool initialized = false;
+	static bool failed = false;
 	
 	_asm
 	{
@@ -40,21 +43,27 @@ _declspec(naked) void HookedDispatchMessageA()
 	}
 
 	// check if game is ready and hack not yet initialized
-	if (!initialized && GetModuleHandleA("CShell.dll") && GetModuleHandleA("ClientFx.fxd"))
+	if (!initialized && !failed && GetModuleHandleA("CShell.dll") && GetModuleHandleA("ClientFx.fxd"))
 	{
 		// Initialize not so awesome hacking engine
-		hacking_engine->Initialize(GetModuleHandleA("CShell.dll"));
+		if (hacking_engine->Initialize(GetModuleHandleA("CShell.dll")))
+		{
+			// Backup the memory we're going to modify so we can restore it if needed
+			// Also required to detour the game's checks for modified values
+			hacking_engine->Backup();
 
-		// Backup the memory we're going to modify so we can restore it if needed
-		// Also required to detour the game's checks for modified values
-		hacking_engine->Backup();
+			// Bypass the shitty 28_3 Client Error
+			hacking_engine->DetourWeaponCheck();
 
-		// Bypass the shitty 28_3 Client Error
-		hacking_engine->DetourWeaponCheck();
-
-		// Initialize fancy game hook
-		hacking_engine->HookFlipScreen(reinterpret_cast<uint32_t>(&HookedFlipScreen), &original_flipscreen);
-		initialized = true;
+			// Initialize fancy game hook
+			hacking_engine->HookFlipScreen(reinterpret_cast<uint32_t>(&HookedFlipScreen), &original_flipscreen);
+			initialized = true;
+		}
+		else
+		{
+			file_log->Write("Failed to initialize hacking engine.");
+			failed = true;
+		}
 	}
 
 	_asm
@@ -72,7 +81,9 @@ bool HookDispatchMessageA(uint32_t routine)
 {
 	uint32_t address_of_function = reinterpret_cast<uint32_t>(&DispatchMessageA);
 	uint8_t shell_code[] = "\xE9\x00\x00\x00\x00";
-	*(uint32_t*)(shell_code + 1) = routine - address_of_function - 5;
+	uint32_t relative_address = routine - address_of_function - 5;
+	file_log->Writef("Absolute HookedDispatchMessageA call address: 0x%X", relative_address);
+	*reinterpret_cast<uint32_t*>(shell_code + 1) = relative_address;
 
 	return PlaceBytes(reinterpret_cast<void*>(address_of_function), shell_code, 5);
 }
@@ -81,16 +92,23 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	switch (dwReason)
 	{
-	case DLL_PROCESS_ATTACH: 
-		if (!HookDispatchMessageA(reinterpret_cast<uint32_t>(HookedDispatchMessageA)))
+	case DLL_PROCESS_ATTACH:
+		file_log->Write("Entry point called with DLL_PROCESS_ATTACH.");
+		file_log->Write("Initializing DispatchMessageA hook.");
+		if (!HookDispatchMessageA(reinterpret_cast<uint32_t>(&HookedDispatchMessageA)))
 		{
-			MessageBoxA(NULL, "Something went incredibly wrong", "Uh oh..", MB_OK | MB_ICONERROR);
+			file_log->Write("Failed to setup DispatchMessageA hook.", kError);
+			MessageBoxA(NULL, "Failed to initizalize hack", "Error", MB_OK | MB_ICONERROR);
 			return FALSE;
 		}
 		break; 
 
+		// will probably not get called when using manual mapping
 	case DLL_PROCESS_DETACH:
+		file_log->Write("Entry point called with DLL_PROCESS_DETACH.");
+		file_log->Close();
 		break;
 	}
+
 	return TRUE;
 }

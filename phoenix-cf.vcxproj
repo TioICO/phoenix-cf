@@ -154,7 +154,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\engine.h" />
+    <ClInclude Include="source\log.h" />
     <ClInclude Include="source\memory.h" />
+    <ClInclude Include="source\modelnode.h" />
     <ClInclude Include="source\stdafx.h" />
     <ClInclude Include="source\targetver.h" />
     <ClInclude Include="source\weapon.h" />
@@ -162,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="source\dllmain.cpp" />
     <ClCompile Include="source\engine.cpp" />
+    <ClCompile Include="source\log.cpp" />
     <ClCompile Include="source\memory.cpp" />
     <ClCompile Include="source\phoenix-cf.cpp" />
     <ClCompile Include="source\stdafx.cpp" />

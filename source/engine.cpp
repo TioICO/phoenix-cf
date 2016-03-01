@@ -5,36 +5,53 @@
 
 Weapon* Engine::old_weapons_[2000];
 
-Engine::Engine()
+Engine::Engine(Log* log)
 {
-	
+	this->file_log_ = log;
 }
 
 Engine::~Engine()
 {
-
 }
 
 bool Engine::Initialize(HMODULE cshell)
 {
+	this->file_log_->Write("Initializing hacking engine.");
+
 	// assuming cshell is a valid handle
 	this->cshell_base_ = reinterpret_cast<uint32_t>(cshell);
+	this->file_log_->Writef("Client Shell base address: 0x%X", this->cshell_base_);
 
 	// weapons
 	this->address_of_weapon_array_ = *reinterpret_cast<uint32_t*>(*reinterpret_cast<uint32_t*>(FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x8B\x4F\x04\xA1\x00\x00\x00\x00\x85\xC0\x8B\x51\x04\x8B\x6A\x04"), "xxxx????xxxxxxxx") + 4));
-	this->weapons_ = reinterpret_cast<Weapon**>(this->address_of_weapon_array_);
 	this->weaponcheck_ = FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\xE8\x00\x00\x00\x00\x8B\xF0\x83\xC4\x04\x85\xF6\x0F\x84\x00\x00\x00\x00\xD9\x86\x00\x00\x00\x00"), "x????xxxxxxxxx????xx????");
+	if (!this->address_of_weapon_array_ || !this->weaponcheck_)
+		return false;
+
+	this->weapons_ = reinterpret_cast<Weapon**>(this->address_of_weapon_array_);
+
+	// model nodes
+	this->address_of_modelnode_array_ = *reinterpret_cast<uint32_t*>(*reinterpret_cast<uint32_t*>(FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x8B\x0D\x00\x00\x00\x00\x83\xC4\x04\x89\x44\x0F\x54\x8B\x15\x00\x00\x00\x00\x8B\x04\x17\x3B\xC3\x7C\x0C\x83\xF8\x64\x7D\x07"), "xx????xxxxxxxxx????xxxxxxxxxxxx") + 2));
+	if (!this->address_of_modelnode_array_)
+		return false;
+
+	this->model_nodes_ = reinterpret_cast<ModelNode*>(this->address_of_modelnode_array_);
 
 	// FlipScreen()
 	this->flipscreen_ = FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x56\x8B\xF1\x80\x7E\x2C\x00\x74\x7D\x8B\x0D\x00\x00\x00\x00"), "xxxxxxxxxxx????");
 	this->call_to_flipscreen_ = FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\xE8\x00\x00\x00\x00\xC6\x46\x00\x00\x5F\x5E\x33\xC0\x5B\x83\xC4\x00"), "x????xx??xxxxxxx?");
+	if (!this->flipscreen_ || !this->call_to_flipscreen_)
+		return false;
 
+	this->file_log_->Write("Hacking engine successfully initialized.");
 	this->initialized_ = true;
 	return true;
 }
 
 void Engine::HookFlipScreen(uint32_t routine, uint32_t* original)
 {
+	this->file_log_->Write("Setting up game hook: FlipScreen().");
+
 	// let the caller know what the address of the original flipscreen function is
 	*original = this->flipscreen_;
 
@@ -61,6 +78,14 @@ void Engine::Run()
 	/*if (difftime(time(0), this->last_run_) < 0.2)
 		return;*/
 
+	if (this->address_of_modelnode_array_)
+	{
+		for (int32_t i = 0; i < 300; i++)
+		{
+			this->model_nodes_[i].type = 1;
+		}
+	}
+
 	if (this->address_of_weapon_array_)
 	{
 		// loop through all weapons
@@ -79,6 +104,11 @@ void Engine::Run()
 					this->weapons_[i]->detail_react_yaw_shot[y] = 0.0f;
 					this->weapons_[i]->shot_react_yaw[y] = 0.0f;
 					this->weapons_[i]->shot_react_pitch[y] = 0.0f;
+				}
+
+				for (int32_t y = 0; y < 30; y++)
+				{
+					this->weapons_[i]->damageratio_per_node[y] = 1.48f;
 				}
 			}
 		}

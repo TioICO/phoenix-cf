@@ -17,8 +17,8 @@ public:
 	float ammo_damage;					// 0xAFC
 	int8_t ___spacer04[756];
 	float movespeed_penalty;			// 0xDF4
-	float damageratio_per_node;			// 0xDF8
-	int8_t ___spacer06[1032];
+	float damageratio_per_node[30];		// 0xDF8, 0x78
+	int8_t ___spacer06[916];
 	float detail_perturb_shot[10];		// 0x1204, 0x28
 	int8_t ___spacer07[320];
 	float detail_react_pitch_shot[10];	// 0x136C, 0x28

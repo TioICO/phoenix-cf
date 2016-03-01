@@ -1,13 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
+    <Filter Include="sources">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
+    <Filter Include="sources\io">
+      <UniqueIdentifier>{f045c724-1562-45c7-a719-096dbc8c3d57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="headers\objects">
+      <UniqueIdentifier>{c21a70b3-13ca-437f-9eea-cd06fb0ba51c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\io">
+      <UniqueIdentifier>{c6c45b92-4695-4268-bbb8-259d627990f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\memory">
+      <UniqueIdentifier>{01167066-415b-4471-8d01-ec21e1f7518c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\memory">
+      <UniqueIdentifier>{e84b6580-8ec3-4d1b-bacd-47a171a4608f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -17,36 +32,45 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\stdafx.h">
-      <Filter>Header Files</Filter>
+      <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="source\targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="source\engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="source\memory.h">
-      <Filter>Header Files</Filter>
+      <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="source\weapon.h">
-      <Filter>Header Files</Filter>
+      <Filter>headers\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="source\modelnode.h">
+      <Filter>headers\objects</Filter>
+    </ClInclude>
+    <ClInclude Include="source\log.h">
+      <Filter>headers\io</Filter>
+    </ClInclude>
+    <ClInclude Include="source\engine.h">
+      <Filter>headers\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="source\memory.h">
+      <Filter>headers\memory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\dllmain.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="source\phoenix-cf.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="source\stdafx.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="source\log.cpp">
+      <Filter>sources\io</Filter>
     </ClCompile>
     <ClCompile Include="source\memory.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>sources\memory</Filter>
     </ClCompile>
     <ClCompile Include="source\engine.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>sources\memory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
