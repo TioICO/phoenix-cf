@@ -43,6 +43,7 @@ private:
 	uint32_t weaponcheck_;
 	Weapon **weapons_;
 	uint32_t address_of_modelnode_array_;
+	uint32_t address_of_wall_array_;
 	ModelNode *model_nodes_;
 	ModelNode old_model_nodes_[300];
 	time_t last_run_;
@@ -56,4 +57,6 @@ private:
 	int32_t ranged_knife_status_;
 	int32_t knife_angle_status_;
 	int32_t movespeed_penalty_status_;
+	int32_t wallhack_status_;
+	int32_t seeghost_status_;
 };

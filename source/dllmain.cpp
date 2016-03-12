@@ -20,6 +20,7 @@ __declspec(naked) void HookedFlipScreen()
 	// run our hacking routine each time the game flips the screen buffers
 	// might optimize this to not drop the framerate on "slow" machines
 	hacking_engine->Run();
+	junkasm
 	
 	_asm
 	{
@@ -36,6 +37,8 @@ _declspec(naked) void HookedDispatchMessageA()
 	static bool initialized = false;
 	static bool failed = false;
 	
+	junkasm
+
 	_asm
 	{
 		pushad
@@ -51,6 +54,7 @@ _declspec(naked) void HookedDispatchMessageA()
 			// Backup the memory we're going to modify so we can restore it if needed
 			// Also required to detour the game's checks for modified values
 			hacking_engine->Backup();
+			junkasm
 
 			// Bypass the shitty 28_3 Client Error
 			hacking_engine->DetourWeaponCheck();
@@ -63,6 +67,7 @@ _declspec(naked) void HookedDispatchMessageA()
 		{
 			file_log->Write("Failed to initialize hacking engine.");
 			failed = true;
+			junkasm
 		}
 	}
 
@@ -81,9 +86,11 @@ bool HookDispatchMessageA(uint32_t routine)
 {
 	uint32_t address_of_function = reinterpret_cast<uint32_t>(&DispatchMessageA);
 	uint8_t shell_code[] = "\xE9\x00\x00\x00\x00";
+	junkasm
 	uint32_t relative_address = routine - address_of_function - 5;
 	file_log->Writef("Absolute HookedDispatchMessageA call address: 0x%X", relative_address);
 	*reinterpret_cast<uint32_t*>(shell_code + 1) = relative_address;
+	junkasm
 
 	return PlaceBytes(reinterpret_cast<void*>(address_of_function), shell_code, 5);
 }
@@ -94,10 +101,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		file_log->Write("Entry point called with DLL_PROCESS_ATTACH.");
+		junkasm
 		file_log->Write("Initializing DispatchMessageA hook.");
 		if (!HookDispatchMessageA(reinterpret_cast<uint32_t>(&HookedDispatchMessageA)))
 		{
 			file_log->Write("Failed to setup DispatchMessageA hook.", kError);
+			junkasm
 			MessageBoxA(NULL, "Failed to initizalize hack", "Error", MB_OK | MB_ICONERROR);
 			return FALSE;
 		}
@@ -105,6 +114,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// will probably not get called when using manual mapping
 	case DLL_PROCESS_DETACH:
+		junkasm
 		file_log->Write("Entry point called with DLL_PROCESS_DETACH.");
 		file_log->Close();
 		break;
