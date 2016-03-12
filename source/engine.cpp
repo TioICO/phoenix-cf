@@ -8,6 +8,23 @@ Weapon* Engine::old_weapons_[2000];
 Engine::Engine(Log* log)
 {
 	this->file_log_ = log;
+	this->menu_ = new Menu();
+
+	// build menu
+	this->file_log_->Write("Building menu.");
+	char *option_on_off[] = { "Off", "On" };
+	char *option_golden_normal[] = { "Off", "Golden", "Normal" };
+	char *option_knife_speed[] = { "Off", "2x", "4x", "6x" };
+	char *option_knife_range[] = { "Off", "450", "600", "1000" };
+	char *option_movespeed_penalty[] = { "Off", "125%", "150%", "200%" };
+	this->menu_->AddItem(&this->no_recoil_status_, "No recoil", option_on_off, 2);
+	this->menu_->AddItem(&this->headshot_status_, "Always headshot", option_golden_normal, 3);
+	this->menu_->AddItem(&this->max_damage_status_, "Max. damage", option_on_off, 2);
+	this->menu_->AddItem(&this->no_nade_damage_status_, "No grenade damage", option_on_off, 2);
+	this->menu_->AddItem(&this->ranged_knife_status_, "Increased knife range", option_knife_range, 4);
+	this->menu_->AddItem(&this->speed_knife_status_, "Increased knife speed", option_knife_speed, 4);
+	this->menu_->AddItem(&this->knife_angle_status_, "Max. knife angle", option_on_off, 2);
+	this->menu_->AddItem(&this->movespeed_penalty_status_, "Movement speed", option_movespeed_penalty, 4);
 }
 
 Engine::~Engine()
@@ -29,18 +46,27 @@ bool Engine::Initialize(HMODULE cshell)
 		return false;
 
 	this->weapons_ = reinterpret_cast<Weapon**>(this->address_of_weapon_array_);
+	this->file_log_->Writef("Address of weapon array: 0x%X", this->address_of_weapon_array_ - this->cshell_base_);
+	this->file_log_->Writef("Address of GetWeaponByIndex function: 0x%X", this->weaponcheck_ - this->cshell_base_);
 
 	// model nodes
-	this->address_of_modelnode_array_ = *reinterpret_cast<uint32_t*>(*reinterpret_cast<uint32_t*>(FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x8B\x0D\x00\x00\x00\x00\x83\xC4\x04\x89\x44\x0F\x54\x8B\x15\x00\x00\x00\x00\x8B\x04\x17\x3B\xC3\x7C\x0C\x83\xF8\x64\x7D\x07"), "xx????xxxxxxxxx????xxxxxxxxxxxx") + 2));
+	this->address_of_modelnode_array_ = *reinterpret_cast<uint32_t*>(*reinterpret_cast<uint32_t*>(FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x00\x00\x00\x00\xD9\x5C\x07\x00\x8B\x4E\x00\x8B\x51\x00\x8B\x42\x00"), "????xxx?xx?xx?xx?")));
 	if (!this->address_of_modelnode_array_)
 		return false;
 
 	this->model_nodes_ = reinterpret_cast<ModelNode*>(this->address_of_modelnode_array_);
+	this->file_log_->Writef("Address of ModelNode array: 0x%X", this->address_of_modelnode_array_ - this->cshell_base_);
 
-	// FlipScreen()
+	// FlipScreen
 	this->flipscreen_ = FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x56\x8B\xF1\x80\x7E\x2C\x00\x74\x7D\x8B\x0D\x00\x00\x00\x00"), "xxxxxxxxxxx????");
 	this->call_to_flipscreen_ = FindPattern(this->cshell_base_, 0xFFFFFF, reinterpret_cast<uint8_t*>("\xE8\x00\x00\x00\x00\xC6\x46\x00\x00\x5F\x5E\x33\xC0\x5B\x83\xC4\x00"), "x????xx??xxxxxxx?");
 	if (!this->flipscreen_ || !this->call_to_flipscreen_)
+		return false;
+
+	this->file_log_->Writef("Address of FlipScreen function: 0x%X", this->flipscreen_ - this->cshell_base_);
+	this->file_log_->Writef("Call to FlipScreen function: 0x%X", this->call_to_flipscreen_ - this->cshell_base_);
+
+	if (!this->UpdateDirectDevice())
 		return false;
 
 	this->file_log_->Write("Hacking engine successfully initialized.");
@@ -50,7 +76,7 @@ bool Engine::Initialize(HMODULE cshell)
 
 void Engine::HookFlipScreen(uint32_t routine, uint32_t* original)
 {
-	this->file_log_->Write("Setting up game hook: FlipScreen().");
+	this->file_log_->Write("Setting up game hook: FlipScreen.");
 
 	// let the caller know what the address of the original flipscreen function is
 	*original = this->flipscreen_;
@@ -66,13 +92,26 @@ void Engine::Backup()
 		if (this->weapons_[i] && this->weapons_[i]->index == i)
 		{
 			Engine::old_weapons_[i] = new Weapon;
-			memcpy(reinterpret_cast<void*>(Engine::old_weapons_[i]), reinterpret_cast<void*>(this->weapons_[i]), 0x4000);
+			memcpy(reinterpret_cast<void*>(Engine::old_weapons_[i]), reinterpret_cast<void*>(this->weapons_[i]), sizeof(Weapon));
 		}
+	}
+
+	for (int32_t i = 0; i < 300; i++)
+	{
+		memcpy(reinterpret_cast<void*>(&this->old_model_nodes_[i]), reinterpret_cast<void*>(&this->model_nodes_[i]), sizeof(ModelNode));
 	}
 }
 
 void Engine::Run()
 {
+	// make sure our device is updated
+	// TODO: add check if player is in game, we don't have to update it there
+	this->UpdateDirectDevice();
+
+	// navigate through menu and render it
+	this->menu_->Navigate();
+	this->menu_->Render(this->direct_device_);
+
 	// trying to not drop the fps on slow machines, this might result in a more or less
 	// noticeable delay when toggling features
 	/*if (difftime(time(0), this->last_run_) < 0.2)
@@ -80,9 +119,20 @@ void Engine::Run()
 
 	if (this->address_of_modelnode_array_)
 	{
-		for (int32_t i = 0; i < 300; i++)
+		// turns every hit into a golden or normal headshot
+		if (this->headshot_status_ > 0 && this->headshot_status_ <= 2)
 		{
-			this->model_nodes_[i].type = 1;
+			for (int32_t i = 0; i < 300; i++)
+			{
+				this->model_nodes_[i].type = this->headshot_status_;
+			}
+		}
+		else
+		{
+			for (int32_t i = 0; i < 300; i++)
+			{
+				this->model_nodes_[i].type = this->old_model_nodes_[i].type;
+			}
 		}
 	}
 
@@ -97,18 +147,56 @@ void Engine::Run()
 				// full (and perfect) no recoil, will give client error 28_3 if not bypassed
 				for (int32_t y = 0; y < 10; y++)
 				{
-					this->weapons_[i]->perturb_max[y] = 0.0f;
-					this->weapons_[i]->perturb_min[y] = 0.0f;
-					this->weapons_[i]->detail_perturb_shot[y] = 0.0f;
-					this->weapons_[i]->detail_react_pitch_shot[y] = 0.0f;
-					this->weapons_[i]->detail_react_yaw_shot[y] = 0.0f;
-					this->weapons_[i]->shot_react_yaw[y] = 0.0f;
-					this->weapons_[i]->shot_react_pitch[y] = 0.0f;
+					this->weapons_[i]->perturb_max[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->perturb_max[y];
+					this->weapons_[i]->perturb_min[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->perturb_min[y];
+					this->weapons_[i]->detail_perturb_shot[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->detail_perturb_shot[y];
+					this->weapons_[i]->detail_react_pitch_shot[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->detail_react_pitch_shot[y];
+					this->weapons_[i]->detail_react_yaw_shot[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->detail_react_yaw_shot[y];
+					this->weapons_[i]->shot_react_yaw[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->shot_react_yaw[y];
+					this->weapons_[i]->shot_react_pitch[y] = this->no_recoil_status_ ? 0.0f : this->old_weapons_[i]->shot_react_pitch[y];
 				}
 
-				for (int32_t y = 0; y < 30; y++)
+				// max weapon damage
+				if (this->weapons_[i]->type != kKnife)
 				{
-					this->weapons_[i]->damageratio_per_node[y] = 1.48f;
+					for (int32_t y = 0; y < 30; y++)
+					{
+						this->weapons_[i]->damageratio_per_node[y] = this->max_damage_status_ ? 1.48f : this->old_weapons_[i]->damageratio_per_node[y];
+					}
+				}
+
+				// movespeed hack
+				static float movespeed_penalty_values[] = { 0.0f, -0.25f, -0.5f, -1.0f };
+				this->weapons_[i]->movespeed_penalty = this->movespeed_penalty_status_ ? movespeed_penalty_values[this->movespeed_penalty_status_] : this->old_weapons_[i]->movespeed_penalty;
+
+				// no grenade damage
+				if (this->weapons_[i]->type == kGrenade)
+				{
+					this->weapons_[i]->ammo_damage = this->no_nade_damage_status_ ? 0.0f : this->old_weapons_[i]->ammo_damage;
+				}
+
+				if (this->weapons_[i]->type == kKnife)
+				{
+					// knife range
+					static float ranged_knife_values[] = { 0.0f, 450.0f, 600.0f, 1000.0f };
+					this->weapons_[i]->range = this->ranged_knife_status_ ? ranged_knife_values[this->ranged_knife_status_] : this->old_weapons_[i]->range;
+					for (int32_t y = 0; y < 3; y++)
+					{
+						this->weapons_[i]->knife_normal_range = this->ranged_knife_status_ ? ranged_knife_values[this->ranged_knife_status_] : this->old_weapons_[i]->knife_normal_range;
+						this->weapons_[i]->knife_normal_range2 = this->ranged_knife_status_ ? ranged_knife_values[this->ranged_knife_status_] : this->old_weapons_[i]->knife_normal_range2;
+					}
+
+					// 360 knife angle
+					this->weapons_[i]->knife_normal_angle = this->knife_angle_status_ ? 9999.0f : this->old_weapons_[i]->knife_normal_angle;
+					this->weapons_[i]->knife_normal_angle2 = this->knife_angle_status_ ? 9999.0f : this->old_weapons_[i]->knife_normal_angle2;
+
+					// speed knife
+					for (int32_t y = 0; y < 7; y++)
+					{
+						static float speed_knife_values[] = { 1.0f, 2.0f, 4.0f, 6.0f };
+						this->weapons_[i]->knife_normal_ani_rate[y] = this->speed_knife_status_ ? speed_knife_values[this->speed_knife_status_] : this->old_weapons_[i]->knife_normal_ani_rate[y];
+						this->weapons_[i]->knife_normal_ani_rate2[y] = this->speed_knife_status_ ? speed_knife_values[this->speed_knife_status_] : this->old_weapons_[i]->knife_normal_ani_rate2[y];
+					}
 				}
 			}
 		}
@@ -121,4 +209,14 @@ void Engine::DetourWeaponCheck()
 {
 	uint32_t relative_address = reinterpret_cast<uint32_t>(&Engine::GetOldWeaponByIndex) - this->weaponcheck_ - 5;
 	*reinterpret_cast<uint32_t*>(this->weaponcheck_ + 1) = relative_address;
+}
+
+bool Engine::UpdateDirectDevice()
+{
+	if (!this->address_of_device_)
+		this->address_of_device_ = *reinterpret_cast<uint32_t*>(*reinterpret_cast<uint32_t*>(FindPattern(0x400000, 0xFFFFFF, reinterpret_cast<uint8_t*>("\x8B\x35\xFF\xFF\xFF\xFF\x8B\xEE\xE8\xFF\xFF\xFF\xFF\x8B\x45\x00\x8B\x08\x8B\x91\xFF\xFF\xFF\xFF\x57\x6A\xFF\x53"), "xx????xxx????xxxxxxx????xx?x") + 2));
+
+	this->direct_device_ = *reinterpret_cast<LPDIRECT3DDEVICE9*>(this->address_of_device_);
+
+	return (this->direct_device_ != nullptr);
 }

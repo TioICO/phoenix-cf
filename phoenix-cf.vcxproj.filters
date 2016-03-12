@@ -24,6 +24,18 @@
     <Filter Include="sources\memory">
       <UniqueIdentifier>{e84b6580-8ec3-4d1b-bacd-47a171a4608f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="headers\menu">
+      <UniqueIdentifier>{43746a02-d03e-43aa-8b4e-1d54743a8eb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="headers\d3d">
+      <UniqueIdentifier>{c11a52b6-e7c3-4b82-a4d3-0c882f174900}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\menu">
+      <UniqueIdentifier>{22f878dd-92ce-4bb1-8d06-da68f863c04e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="sources\d3d">
+      <UniqueIdentifier>{f6c59761-9a16-45be-a0c7-e570cc92a472}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -52,6 +64,15 @@
     <ClInclude Include="source\memory.h">
       <Filter>headers\memory</Filter>
     </ClInclude>
+    <ClInclude Include="source\menuitem.h">
+      <Filter>headers\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="source\menu.h">
+      <Filter>headers\menu</Filter>
+    </ClInclude>
+    <ClInclude Include="source\d3d.h">
+      <Filter>headers\d3d</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\dllmain.cpp">
@@ -71,6 +92,12 @@
     </ClCompile>
     <ClCompile Include="source\engine.cpp">
       <Filter>sources\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="source\menu.cpp">
+      <Filter>sources\menu</Filter>
+    </ClCompile>
+    <ClCompile Include="source\d3d.cpp">
+      <Filter>sources\d3d</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

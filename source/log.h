@@ -19,7 +19,7 @@ public:
 	~Log();
 	void Close();
 	void Write(const char* message, LogLevel level = kInfo);
-	void Writef(const char* format, ...);
+	void Writef(const char* format, uint32_t value);
 
 private:
 	static char* ToString(LogLevel level);

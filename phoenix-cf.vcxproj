@@ -77,6 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -153,19 +155,24 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\d3d.h" />
     <ClInclude Include="source\engine.h" />
     <ClInclude Include="source\log.h" />
     <ClInclude Include="source\memory.h" />
+    <ClInclude Include="source\menu.h" />
+    <ClInclude Include="source\menuitem.h" />
     <ClInclude Include="source\modelnode.h" />
     <ClInclude Include="source\stdafx.h" />
     <ClInclude Include="source\targetver.h" />
     <ClInclude Include="source\weapon.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\d3d.cpp" />
     <ClCompile Include="source\dllmain.cpp" />
     <ClCompile Include="source\engine.cpp" />
     <ClCompile Include="source\log.cpp" />
     <ClCompile Include="source\memory.cpp" />
+    <ClCompile Include="source\menu.cpp" />
     <ClCompile Include="source\phoenix-cf.cpp" />
     <ClCompile Include="source\stdafx.cpp" />
   </ItemGroup>

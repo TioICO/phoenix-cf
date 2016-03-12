@@ -6,7 +6,7 @@ Log::Log(char* filename, bool enabled)
 {
 	// might disable this in releases, they don't have to know everything
 	this->logging_enabled_ = enabled;
-	this->out_file_stream_.open(filename, std::fstream::out | std::fstream::app);
+	this->out_file_stream_.open(filename, std::fstream::out);
 }
 
 Log::~Log()
@@ -32,16 +32,14 @@ void Log::Write(const char* message, LogLevel level)
 	this->out_file_stream_.flush();
 }
 
-void Log::Writef(const char* format, ...)
+void Log::Writef(const char* format, uint32_t value)
 {
 	if (!this->logging_enabled_)
 		return;
 
-	char buffer[256];
-	va_list argptr;
-	va_start(argptr, format);
-	sprintf_s(buffer, format, argptr);
-	va_end(argptr);
+	char buffer[1024];
+
+	sprintf_s(buffer, format, value);
 
 	this->Write(buffer, kInfo);
 }

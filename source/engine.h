@@ -6,6 +6,7 @@
 #include "weapon.h"
 #include "modelnode.h"
 #include "log.h"
+#include "menu.h"
 
 class Engine
 {
@@ -25,8 +26,15 @@ public:
 	}
 
 private:
+	bool UpdateDirectDevice();
+
+private:
 	static Weapon *old_weapons_[2000];
 	
+	Menu* menu_;
+	LPDIRECT3DDEVICE9 direct_device_;
+	uint32_t address_of_device_;
+
 	Log* file_log_;
 	uint32_t cshell_base_;
 	uint32_t flipscreen_;
@@ -36,6 +44,16 @@ private:
 	Weapon **weapons_;
 	uint32_t address_of_modelnode_array_;
 	ModelNode *model_nodes_;
+	ModelNode old_model_nodes_[300];
 	time_t last_run_;
 	bool initialized_ = false;
+
+	int32_t no_recoil_status_;
+	int32_t headshot_status_;
+	int32_t max_damage_status_;
+	int32_t no_nade_damage_status_;
+	int32_t speed_knife_status_;
+	int32_t ranged_knife_status_;
+	int32_t knife_angle_status_;
+	int32_t movespeed_penalty_status_;
 };
